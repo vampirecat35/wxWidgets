@@ -543,7 +543,7 @@ void wxRibbonPage::OnSize(wxSizeEvent& evt)
 
     if (m_art)
     {
-        wxMemoryDC temp_dc;
+        wxInfoDC temp_dc(this);
         wxRect invalid_rect = m_art->GetPageBackgroundRedrawArea(temp_dc, this, m_old_size, new_size);
         Refresh(true, &invalid_rect);
     }
@@ -728,6 +728,14 @@ bool wxRibbonPage::DoActualLayout()
         if(size_index != 0)
             available_space -= gap;
     }
+    if(m_size_calc_array_size == 0)
+    {
+        // There is nothing to scroll in a page without panels, even if it
+        // is currently too small for the page borders, e.g. because it
+        // doesn't have its real size yet. Layout() doesn't do anything for
+        // such page, so the scroll buttons would remain shown.
+        available_space = wxMax(available_space, 0);
+    }
     bool todo_hide_scroll_buttons = false;
     bool todo_show_scroll_buttons = false;
     if(available_space >= 0)
@@ -838,7 +846,7 @@ bool wxRibbonPage::ShowScrollButtons()
 
     if(show_left)
     {
-        wxMemoryDC temp_dc;
+        wxInfoDC temp_dc(this);
         wxSize size;
         long direction;
         if(GetMajorAxis() == wxHORIZONTAL)
@@ -879,7 +887,7 @@ bool wxRibbonPage::ShowScrollButtons()
 
     if(show_right)
     {
-        wxMemoryDC temp_dc;
+        wxInfoDC temp_dc(this);
         wxSize size;
         long direction;
         if(GetMajorAxis() == wxHORIZONTAL)

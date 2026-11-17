@@ -459,7 +459,7 @@ bool wxTIFFHandler::LoadFile( wxImage *image, wxInputStream& stream, bool verbos
     }
     else
     {
-        ok = TIFFReadRGBAImageOriented( tif, w, h, raster,
+        ok = TIFFReadRGBAImageOriented( tif, w, h, (uint32_t*)raster,
             ORIENTATION_TOPLEFT, 0 ) != 0;
     }
 

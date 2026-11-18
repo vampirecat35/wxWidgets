@@ -75,17 +75,37 @@ macro(wx_retro68_default name value)
     endif()
 endmacro()
 
-# Use built-in versions of all third party libraries, there are no system
-# ones (except for zlib, but use the built-in one for consistency).
+# Use built-in versions of all third party libraries by default (system
+# ones may be installed into the toolchain sysroot, but use the built-in ones
+# for consistency). liblzma has no built-in version, so use it if it's found
+# in the sysroot.
 wx_retro68_default(wxUSE_SYS_LIBS OFF)
-wx_retro68_default(wxUSE_LIBLZMA OFF)
+if(NOT DEFINED wxUSE_LIBLZMA)
+    find_package(LibLZMA QUIET)
+    if(LIBLZMA_FOUND)
+        wx_retro68_default(wxUSE_LIBLZMA ON)
+    else()
+        wx_retro68_default(wxUSE_LIBLZMA OFF)
+    endif()
+endif()
 wx_retro68_default(wxUSE_LIBTIFF OFF)
 wx_retro68_default(wxUSE_LIBWEBP OFF)
 wx_retro68_default(wxUSE_LUNASVG OFF)
 wx_retro68_default(wxUSE_OPENGL OFF)
 
+# wxThread uses pthreads-retro68 (cooperative Thread Manager threads), found
+# via find_package(Threads) as the Retro68 toolchain files install their own
+# FindThreads.cmake for it.
+if(NOT DEFINED wxUSE_THREADS)
+    find_package(Threads QUIET)
+    if(Threads_FOUND AND CMAKE_USE_PTHREADS_INIT)
+        wx_retro68_default(wxUSE_THREADS ON)
+    else()
+        wx_retro68_default(wxUSE_THREADS OFF)
+    endif()
+endif()
+
 # Operating system features not available under classic Mac OS.
-wx_retro68_default(wxUSE_THREADS OFF)
 wx_retro68_default(wxUSE_SOCKETS OFF)
 wx_retro68_default(wxUSE_IPV6 OFF)
 wx_retro68_default(wxUSE_IPC OFF)

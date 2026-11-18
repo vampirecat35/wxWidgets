@@ -48,6 +48,7 @@ set(BASE_UNIX_HDR
 )
 
 set(BASE_RETRO68_SRC
+    src/unix/threadpsx.cpp
     src/unix/timerunx.cpp
     src/retro68/dir.cpp
     src/retro68/filefn.cpp

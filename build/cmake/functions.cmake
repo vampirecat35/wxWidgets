@@ -288,6 +288,11 @@ function(wx_set_common_target_properties target_name)
 
     if(wxUSE_THREADS)
         set(LIB_VISIBILITY PRIVATE)
+        if(RETRO68)
+            # wx/tls.h includes pthreads-retro68 <pthread.h> when using
+            # Retro68, so the applications need its include directory too.
+            set(LIB_VISIBILITY PUBLIC)
+        endif()
         if (${target_name} MATCHES ".*webp.*" OR ${target_name} MATCHES "sharpyuv")
             # libwebp libraries use the plain-signature of target_link_libraries
             # this can't be mixed with the visibility keyword-signature

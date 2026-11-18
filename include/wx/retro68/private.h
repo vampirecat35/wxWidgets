@@ -77,6 +77,13 @@ WXDLLIMPEXP_BASE OSErr wxMacGetCatInfo(const FSSpec& spec,
 // error).
 WXDLLIMPEXP_BASE int wxMacSetErrno(OSErr err);
 
+#if wxUSE_THREADS
+// Let the other threads, which are cooperative, run for a while. Must be
+// called from the main thread only, which must own the GUI mutex. Returns
+// false if there are no other threads (and so nothing was done).
+WXDLLIMPEXP_BASE bool wxRetro68YieldToThreads();
+#endif
+
 // Return the location of the given standard folder (one of k*FolderType
 // constants) on the system disk, possibly creating it.
 WXDLLIMPEXP_BASE wxString wxMacFindFolder(OSType folderType, bool create = true);

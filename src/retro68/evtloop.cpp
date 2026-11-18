@@ -28,6 +28,7 @@
 
 #include "wx/unix/private/timer.h"
 
+#include "wx/retro68/private.h"
 #include "wx/retro68/private/qd.h"
 #include "wx/retro68/private/bgtask.h"
 #include "wx/retro68/dc.h"
@@ -599,13 +600,25 @@ bool wxGUIEventLoop::DoDispatchTimeout(long timeout)
     {
         wxRetro68RunBackgroundTask();
 
+#if wxUSE_THREADS
+        // Threads are cooperative, so they only run when we let them. If they
+        // post any events, they wake us up, so WaitNextEvent() below returns
+        // immediately.
+        const bool hasThreads = wxRetro68YieldToThreads();
+#endif // wxUSE_THREADS
+
         // Process the expired timers first.
         if ( wxTimerScheduler::Get().NotifyExpired() )
             return true;
 
         // Compute how long can we sleep: not long at all if we need to run
-        // the background task regularly.
+        // the background task regularly and not at all if there are other
+        // threads, as WaitNextEvent() doesn't let them run.
         long sleepTicks = gs_backgroundTask ? 1 : 60;
+#if wxUSE_THREADS
+        if ( hasThreads )
+            sleepTicks = 0;
+#endif // wxUSE_THREADS
 
         wxUsecClock_t remaining;
         if ( wxTimerScheduler::Get().GetNext(&remaining) )
@@ -671,6 +684,10 @@ void wxGUIEventLoop::DoYieldFor(long eventsToProcess)
         mask = everyEvent;
 
     wxRetro68RunBackgroundTask();
+
+#if wxUSE_THREADS
+    wxRetro68YieldToThreads();
+#endif // wxUSE_THREADS
 
     EventRecord ev;
     while ( WaitNextEvent(mask, &ev, 0, nullptr) )

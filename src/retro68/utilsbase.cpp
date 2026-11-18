@@ -25,9 +25,36 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if wxUSE_THREADS
+    #include <errno.h>
+    // nanosleep() is declared by pthreads-retro68 and not newlib's <time.h>.
+    #include <pthread.h>
+#endif
+
 // ============================================================================
 // sleeping
 // ============================================================================
+
+#if wxUSE_THREADS
+
+// Delay() would block all the (cooperative) threads, so use nanosleep() from
+// pthreads-retro68 instead, which lets the other threads run while sleeping.
+void wxMicroSleep(unsigned long microseconds)
+{
+    timespec ts;
+    ts.tv_sec = static_cast<time_t>(microseconds / 1000000UL);
+    ts.tv_nsec = static_cast<long>((microseconds % 1000000UL) * 1000UL);
+
+    while ( nanosleep(&ts, &ts) != 0 && errno == EINTR )
+        ;
+}
+
+void wxMilliSleep(unsigned long milliseconds)
+{
+    wxMicroSleep(milliseconds * 1000UL);
+}
+
+#else // !wxUSE_THREADS
 
 void wxMilliSleep(unsigned long milliseconds)
 {
@@ -40,6 +67,8 @@ void wxMicroSleep(unsigned long microseconds)
 {
     wxMilliSleep((microseconds + 999) / 1000);
 }
+
+#endif // wxUSE_THREADS/!wxUSE_THREADS
 
 void wxSleep(int nSecs)
 {

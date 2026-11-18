@@ -483,6 +483,14 @@ if(UNIX)
 endif(UNIX)
 
 if(CMAKE_USE_PTHREADS_INIT)
+    cmake_push_check_state(RESET)
+
+    # The pthread functions may live in a separate library (e.g. on Retro68,
+    # where CMAKE_THREAD_LIBS_INIT is the pthreads-retro68::pthread target
+    # which also provides the include path for its pthread.h), so link the
+    # checks with it.
+    set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
+
     wx_check_symbols_exist_if_not_linux(
         pthread.h
         pthread_attr_setstacksize
@@ -510,8 +518,6 @@ if(CMAKE_USE_PTHREADS_INIT)
         endif()
     endif()
 
-    cmake_push_check_state(RESET)
-
     if(wxSKIP_CHECK_IF_LINUX)
         # Linux always has pthread_cleanup_push and pthread_cleanup_pop, so we
         # can skip the checks.
@@ -519,7 +525,6 @@ if(CMAKE_USE_PTHREADS_INIT)
         set(HAVE_PTHREAD_MUTEXATTR_T 1)
         set(HAVE_PTHREAD_MUTEXATTR_SETTYPE_DECL 1)
     else()
-        set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
         wx_check_cxx_source_compiles("
             void *p;
             pthread_cleanup_push(ThreadCleanupFunc, p);

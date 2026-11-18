@@ -12,14 +12,11 @@
 #define _WX_RETRO68_CHKCONF_H_
 
 /*
-    Classic Mac OS uses cooperative multitasking only and there are no
-    preemptive threads usable by the applications (MP tasks exist on PowerPC
-    but can't call any Toolbox functions and are not supported by wx).
+    wxThread is implemented using pthreads-retro68, i.e. on top of the
+    cooperative Thread Manager threads: there are no preemptive threads usable
+    by the applications (MP tasks exist on PowerPC but can't call any Toolbox
+    functions and are not supported by wx).
  */
-#if wxUSE_THREADS
-#   undef wxUSE_THREADS
-#   define wxUSE_THREADS 0
-#endif
 
 /* Networking would require Open Transport/MacTCP support, not done yet. */
 #if wxUSE_SOCKETS

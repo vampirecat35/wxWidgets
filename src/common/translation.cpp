@@ -1572,8 +1572,8 @@ const wxString& wxTranslations::GetUntranslatedString(const wxString& str)
 /* static */
 const wxString& wxTranslations::GetUntranslatedString(const wxString& str)
 {
-    static wxTHREAD_SPECIFIC_DECL UntranslatedStrings wxPerThreadStrings;
-    return *wxPerThreadStrings.insert(str).first;
+    static wxTLS_TYPE(UntranslatedStrings) wxPerThreadStrings;
+    return *wxTLS_VALUE(wxPerThreadStrings).insert(str).first;
 }
 
 #endif // __MINGW32__ // !__MINGW32__

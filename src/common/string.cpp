@@ -75,8 +75,8 @@ const wxChar WXDLLIMPEXP_BASE *wxEmptyString = wxT("");
 /* static */
 wxString::Cache& wxString::GetCache()
 {
-    static wxTHREAD_SPECIFIC_DECL Cache s_cache;
-    return s_cache;
+    static wxTLS_TYPE(Cache) s_cache;
+    return wxTLS_VALUE(s_cache);
 }
 
 // gdb seems to be unable to display thread-local variables correctly, at least

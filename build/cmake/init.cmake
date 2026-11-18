@@ -360,11 +360,17 @@ if(wxUSE_THREADS)
 endif()
 
 if(wxUSE_LIBLZMA)
-#   find_package(LibLZMA)
-    find_library(LibLZMA lzma)
-    if(NOT LibLZMA)
+    find_package(LibLZMA)
+    if(NOT LIBLZMA_FOUND)
         message(WARNING "libLZMA not found, LZMA compression won't be available")
         wx_option_force_value(wxUSE_LIBLZMA OFF)
+    elseif(NOT TARGET liblzma::liblzma AND TARGET LibLZMA::LibLZMA)
+        # liblzma's own CMake package (and so other packages depending on it,
+        # e.g. libtiff) uses this name for the target, while FindLibLZMA only
+        # defines LibLZMA::LibLZMA, so provide the former too.
+        add_library(liblzma::liblzma INTERFACE IMPORTED)
+        set_target_properties(liblzma::liblzma PROPERTIES
+            INTERFACE_LINK_LIBRARIES LibLZMA::LibLZMA)
     endif()
 endif()
 

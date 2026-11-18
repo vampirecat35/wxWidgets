@@ -182,8 +182,30 @@ function(wx_write_config)
 
     set(CC ${CMAKE_C_COMPILER})
     set(CXX ${CMAKE_CXX_COMPILER})
-    set(WXCONFIG_CFLAGS ${CMAKE_THREAD_LIBS_INIT})
-    set(WXCONFIG_LDFLAGS ${CMAKE_THREAD_LIBS_INIT})
+    if(TARGET "${CMAKE_THREAD_LIBS_INIT}")
+        # The threads library may be an imported target, e.g.
+        # pthreads-retro68::pthread when using Retro68, which can't be used
+        # in wx-config output directly: use its include directories and
+        # library file instead. The latter must come after the wx libraries
+        # when linking statically, so add it to the base library dependencies.
+        set(WXCONFIG_CFLAGS)
+        set(WXCONFIG_LDFLAGS)
+        get_target_property(thread_incs ${CMAKE_THREAD_LIBS_INIT} INTERFACE_INCLUDE_DIRECTORIES)
+        if(thread_incs)
+            list(REMOVE_DUPLICATES thread_incs)
+            foreach(inc IN LISTS thread_incs)
+                wx_string_append(WXCONFIG_CFLAGS " -I${inc}")
+            endforeach()
+        endif()
+        string(STRIP "${WXCONFIG_CFLAGS}" WXCONFIG_CFLAGS)
+        get_target_property(thread_lib ${CMAKE_THREAD_LIBS_INIT} LOCATION)
+        if(thread_lib)
+            string(STRIP "${WXCONFIG_LIBS} ${thread_lib}" WXCONFIG_LIBS)
+        endif()
+    else()
+        set(WXCONFIG_CFLAGS ${CMAKE_THREAD_LIBS_INIT})
+        set(WXCONFIG_LDFLAGS ${CMAKE_THREAD_LIBS_INIT})
+    endif()
     set(WXCONFIG_CPPFLAGS)
     if(wxBUILD_SHARED)
         wx_string_append(WXCONFIG_CPPFLAGS " -DWXUSINGDLL")

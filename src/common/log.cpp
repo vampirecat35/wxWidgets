@@ -37,6 +37,7 @@
 #include "wx/msgout.h"
 #include "wx/textfile.h"
 #include "wx/thread.h"
+#include "wx/tls.h"
 #include "wx/crt.h"
 #include "wx/vector.h"
 
@@ -99,9 +100,10 @@ WX_DEFINE_LOG_CS(TraceMask);
 // and this one is used for GetComponentLevels()
 WX_DEFINE_LOG_CS(Levels);
 
-thread_local wxLog* wxPerThreadLogger = nullptr;
+// Note that these variables are zero-initialized, i.e. null and false.
+wxTLS_TYPE(wxLog*) wxPerThreadLogger;
 
-thread_local bool wxPerThreadLoggingDisabled = false;
+wxTLS_TYPE(bool) wxPerThreadLoggingDisabled;
 
 } // anonymous namespace
 
@@ -368,7 +370,7 @@ wxLog::OnLog(wxLogLevel level,
 #if wxUSE_THREADS
     if ( !wxThread::IsMain() )
     {
-        logger = wxPerThreadLogger;
+        logger = wxTLS_VALUE(wxPerThreadLogger);
         if ( !logger )
         {
             if ( ms_pLogger )
@@ -486,7 +488,7 @@ wxLog *wxLog::GetActiveTarget()
     if ( !wxThread::IsMain() )
     {
         // check if we have a thread-specific log target
-        wxLog * const logger = wxPerThreadLogger;
+        wxLog * const logger = wxTLS_VALUE(wxPerThreadLogger);
 
         // the code below should be only executed for the main thread as
         // CreateLogTarget() is not meant for auto-creating log targets for
@@ -548,11 +550,11 @@ wxLog *wxLog::SetThreadActiveTarget(wxLog *logger)
 {
     wxASSERT_MSG( !wxThread::IsMain(), "use SetActiveTarget() for main thread" );
 
-    wxLog * const oldLogger = wxPerThreadLogger;
+    wxLog * const oldLogger = wxTLS_VALUE(wxPerThreadLogger);
     if ( oldLogger )
         oldLogger->Flush();
 
-    wxPerThreadLogger = logger;
+    wxTLS_VALUE(wxPerThreadLogger) = logger;
 
     return oldLogger;
 }
@@ -759,14 +761,14 @@ void wxLog::FlushThreadMessages()
 /* static */
 bool wxLog::IsThreadLoggingEnabled()
 {
-    return !wxPerThreadLoggingDisabled;
+    return !wxTLS_VALUE(wxPerThreadLoggingDisabled);
 }
 
 /* static */
 bool wxLog::EnableThreadLogging(bool enable)
 {
-    const bool wasEnabled = !wxPerThreadLoggingDisabled;
-    wxPerThreadLoggingDisabled = !enable;
+    const bool wasEnabled = !wxTLS_VALUE(wxPerThreadLoggingDisabled);
+    wxTLS_VALUE(wxPerThreadLoggingDisabled) = !enable;
     return wasEnabled;
 }
 

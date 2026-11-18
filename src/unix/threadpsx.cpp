@@ -1287,7 +1287,11 @@ void wxThread::Yield()
 
 int wxThread::GetCPUCount()
 {
-#if defined(_SC_NPROCESSORS_ONLN)
+#if defined(__RETRO68__)
+    // Classic Mac OS applications only ever run on one CPU (and sysconf()
+    // is declared but not implemented).
+    return 1;
+#elif defined(_SC_NPROCESSORS_ONLN)
     // this works for Solaris and Linux 2.6
     int rc = sysconf(_SC_NPROCESSORS_ONLN);
     if ( rc != -1 )
@@ -2004,6 +2008,32 @@ static void DeleteThread(wxThread *This)
         gs_condAllDeleted->Signal();
     }
 }
+
+#ifdef __RETRO68__
+
+// Threads are cooperative under classic Mac OS, so the main thread must give
+// them a chance to run from its event loop, see wx/retro68/private.h.
+bool wxRetro68YieldToThreads()
+{
+    if ( !gs_mutexAllThreads || !wxThread::IsMain() )
+        return false;
+
+    {
+        wxMutexLocker lock(*gs_mutexAllThreads);
+        if ( gs_allThreads.empty() )
+            return false;
+    }
+
+    // Release the GUI mutex held by the main thread while the other threads
+    // run, they may be waiting for it in wxMutexGuiEnter().
+    gs_mutexGui->Unlock();
+    sched_yield();
+    gs_mutexGui->Lock();
+
+    return true;
+}
+
+#endif // __RETRO68__
 
 #ifndef __DARWIN__
 

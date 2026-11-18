@@ -13,6 +13,32 @@ if(wxUSE_LIBTIFF STREQUAL "sys")
     if(NOT TIFF_FOUND)
         # If the sys library can not be found use builtin
         wx_option_force_value(wxUSE_LIBTIFF builtin)
+    elseif(TARGET TIFF::tiff AND NOT TARGET ZSTD::ZSTD)
+        # libtiff's own CMake package may reference ZSTD::ZSTD (the target
+        # name defined by libtiff's FindZSTD module) without importing it,
+        # so provide it, using zstd's own CMake package or a plain library.
+        get_target_property(wxTIFF_DEPS TIFF::tiff INTERFACE_LINK_LIBRARIES)
+        if(wxTIFF_DEPS MATCHES "ZSTD::ZSTD")
+            find_package(zstd CONFIG QUIET)
+            if(TARGET zstd::libzstd_static)
+                set(wxZSTD_LIB zstd::libzstd_static)
+            elseif(TARGET zstd::libzstd_shared)
+                set(wxZSTD_LIB zstd::libzstd_shared)
+            elseif(TARGET zstd::libzstd)
+                set(wxZSTD_LIB zstd::libzstd)
+            else()
+                find_library(wxZSTD_LIB NAMES zstd zstd_static)
+                mark_as_advanced(wxZSTD_LIB)
+            endif()
+            if(wxZSTD_LIB)
+                add_library(ZSTD::ZSTD INTERFACE IMPORTED)
+                set_target_properties(ZSTD::ZSTD PROPERTIES
+                    INTERFACE_LINK_LIBRARIES ${wxZSTD_LIB})
+            else()
+                message(WARNING "libtiff requires zstd which wasn't found, using builtin libtiff")
+                wx_option_force_value(wxUSE_LIBTIFF builtin)
+            endif()
+        endif()
     endif()
 endif()
 
